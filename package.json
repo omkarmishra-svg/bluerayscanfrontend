@@ -1,5 +1,5 @@
 {
-      "name": "OSINT Deepfake Monitoring System",
+      "name": "bluerayscan-frontend",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
