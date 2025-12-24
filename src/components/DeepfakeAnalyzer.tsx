@@ -42,40 +42,47 @@ export function DeepfakeAnalyzer() {
     formData.append('file', selectedFile);
 
     try {
+      console.log('Starting analysis with file:', selectedFile.name);
       const response = await fetch('https://bluerayscanbackend.onrender.com/api/scan', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('Response received:', response.status);
+
       if (!response.ok) {
-        throw new Error('Analysis failed');
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
+        throw new Error(`Analysis failed (Status ${response.status})`);
       }
 
       const data = await response.json();
+      console.log('Analysis data:', data);
 
       // Map backend response to AnalysisResult
       const baseUrl = 'https://bluerayscanbackend.onrender.com';
       const mappedResult: AnalysisResult = {
-        confidence: data.confidence,
+        confidence: data.confidence || 0,
         verdict: data.prediction === 'FAKE' ? 'deepfake' : 'authentic',
         indicators: [
           {
             name: 'ML Model Analysis',
             status: data.prediction === 'FAKE' ? 'fail' : 'pass',
-            description: data.explanation || 'No detailed explanation provided'
+            description: data.explanation || 'Backend completed analysis'
           }
         ],
         metadata: [
-          { label: 'Filename', value: data.file_info?.filename || 'Unknown' },
-          { label: 'Mode', value: data.analysis?.mode || 'Normal' }
+          { label: 'Filename', value: data.file_info?.filename || selectedFile.name },
+          { label: 'Mode', value: data.analysis?.mode || 'Remote API' },
+          { label: 'Filesize', value: `${(selectedFile.size / 1024).toFixed(1)} KB` }
         ],
-        heatmap: data.heatmap ? `${baseUrl}${data.heatmap}` : undefined
+        heatmap: data.heatmap ? (data.heatmap.startsWith('http') ? data.heatmap : `${baseUrl}${data.heatmap}`) : undefined
       };
 
       setResult(mappedResult);
-    } catch (error) {
-      console.error('Error analyzing media:', error);
-      alert("Failed to analyze media. Please ensure the backend is running.");
+    } catch (error: any) {
+      console.error('Detailed error analyzing media:', error);
+      alert(`Error: ${error.message || "Failed to contact analysis server"}. \n\nCheck if the backend is awake (it may take 1 minute to start on Render free tier).`);
     } finally {
       setAnalyzing(false);
     }
