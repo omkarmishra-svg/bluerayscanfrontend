@@ -1,7 +1,20 @@
 import { useState } from 'react';
 import { Search, MapPin, Calendar, Link as LinkIcon, MessageSquare, Image, Code, AlertCircle } from 'lucide-react';
+import { Button } from './ui/button';
 
 type Platform = 'all' | 'social' | 'forums' | 'repos' | 'news' | 'dark-web';
+
+interface FootprintItem {
+  id: string | number;
+  platform: string;
+  type: string;
+  content: string;
+  timestamp: string;
+  url: string;
+  location: string | null;
+  risk: string;
+  tags: string[];
+}
 
 const footprintData = [
   {
@@ -98,21 +111,51 @@ export function DigitalFootprint() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('all');
   const [selectedRisk, setSelectedRisk] = useState<string>('all');
+  const [loading, setLoading] = useState(false);
+  const [osintData, setOsintData] = useState<any[]>(footprintData); // Fallback to mock if search not performed
 
-  const filteredData = footprintData.filter(item => {
+  const handleSearch = async () => {
+    if (!searchQuery) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8000/api/intelligence/search?email=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) throw new Error('Search request failed');
+      const data = await response.json();
+      if (data.status === 'success') {
+        const mappedData: FootprintItem[] = data.digital_footprint.map((item: any, idx: number) => ({
+          id: `real-${idx}`,
+          platform: item.platform,
+          type: 'social',
+          content: item.risk_description,
+          timestamp: new Date().toISOString().split('T')[0],
+          url: '#',
+          location: null,
+          risk: item.risk_level.toLowerCase() as FootprintItem['risk'],
+          tags: [item.platform.toLowerCase()]
+        }));
+        setOsintData(mappedData);
+      }
+    } catch (error) {
+      console.error('OSINT Search failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredData = osintData.filter((item: FootprintItem) => {
     const matchesSearch = item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.platform.toLowerCase().includes(searchQuery.toLowerCase());
+      item.platform.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPlatform = selectedPlatform === 'all' || item.type === selectedPlatform;
     const matchesRisk = selectedRisk === 'all' || item.risk === selectedRisk;
     return matchesSearch && matchesPlatform && matchesRisk;
   });
 
   const stats = {
-    total: footprintData.length,
-    critical: footprintData.filter(i => i.risk === 'critical').length,
-    high: footprintData.filter(i => i.risk === 'high').length,
-    medium: footprintData.filter(i => i.risk === 'medium').length,
-    low: footprintData.filter(i => i.risk === 'low').length,
+    total: osintData.length,
+    critical: osintData.filter((i: FootprintItem) => i.risk === 'critical').length,
+    high: osintData.filter((i: FootprintItem) => i.risk === 'high').length,
+    medium: osintData.filter((i: FootprintItem) => i.risk === 'medium').length,
+    low: osintData.filter((i: FootprintItem) => i.risk === 'low').length,
   };
 
   return (
@@ -153,16 +196,21 @@ export function DigitalFootprint() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search content, platforms..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <label className="block text-sm text-slate-400 mb-2">Search Email / Username</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter email to trace..."
+                  className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <Button onClick={handleSearch} disabled={loading}>
+                {loading ? 'Searching...' : 'Scan Footprint'}
+              </Button>
             </div>
           </div>
 
@@ -212,12 +260,11 @@ export function DigitalFootprint() {
             >
               {/* Risk Indicator */}
               <div className="flex-shrink-0">
-                <div className={`w-3 h-3 rounded-full mt-1.5 ${
-                  item.risk === 'critical' ? 'bg-red-500 shadow-lg shadow-red-500/50' :
+                <div className={`w-3 h-3 rounded-full mt-1.5 ${item.risk === 'critical' ? 'bg-red-500 shadow-lg shadow-red-500/50' :
                   item.risk === 'high' ? 'bg-orange-500' :
-                  item.risk === 'medium' ? 'bg-yellow-500' :
-                  'bg-green-500'
-                }`} />
+                    item.risk === 'medium' ? 'bg-yellow-500' :
+                      'bg-green-500'
+                  }`} />
               </div>
 
               {/* Content */}
@@ -226,12 +273,11 @@ export function DigitalFootprint() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-slate-100">{item.platform}</span>
-                      <span className={`px-2 py-0.5 text-xs rounded ${
-                        item.risk === 'critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                      <span className={`px-2 py-0.5 text-xs rounded ${item.risk === 'critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
                         item.risk === 'high' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                        item.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                        'bg-green-500/20 text-green-400 border border-green-500/30'
-                      }`}>
+                          item.risk === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                            'bg-green-500/20 text-green-400 border border-green-500/30'
+                        }`}>
                         {item.risk.toUpperCase()}
                       </span>
                     </div>
@@ -264,7 +310,7 @@ export function DigitalFootprint() {
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {item.tags.map((tag, idx) => (
+                  {item.tags.map((tag: string, idx: number) => (
                     <span
                       key={idx}
                       className="px-2 py-1 bg-slate-700/50 text-slate-400 text-xs rounded border border-slate-600"

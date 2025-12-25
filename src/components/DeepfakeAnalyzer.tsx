@@ -42,8 +42,14 @@ export function DeepfakeAnalyzer() {
     formData.append('file', selectedFile);
 
     try {
-      console.log('Starting analysis with file:', selectedFile.name);
-      const response = await fetch('https://bluerayscanbackend.onrender.com/api/scan', {
+      console.log(`Starting ${selectedType} analysis with file:`, selectedFile.name);
+
+      // Determine correct endpoint
+      let endpoint = 'http://localhost:8000/api/scan';
+      if (selectedType === 'video') endpoint = 'http://localhost:8000/api/scan/video';
+      if (selectedType === 'audio') endpoint = 'http://localhost:8000/api/scan/audio';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       });
@@ -60,20 +66,20 @@ export function DeepfakeAnalyzer() {
       console.log('Analysis data:', data);
 
       // Map backend response to AnalysisResult
-      const baseUrl = 'https://bluerayscanbackend.onrender.com';
+      const baseUrl = 'http://localhost:8000';
       const mappedResult: AnalysisResult = {
         confidence: data.confidence || 0,
         verdict: data.prediction === 'FAKE' ? 'deepfake' : 'authentic',
         indicators: [
           {
-            name: 'ML Model Analysis',
+            name: 'Neural Network Analysis',
             status: data.prediction === 'FAKE' ? 'fail' : 'pass',
-            description: data.explanation || 'Backend completed analysis'
+            description: data.analysis?.explanation || data.explanation || 'Model detected synthetic artifacts in media sample.'
           }
         ],
         metadata: [
           { label: 'Filename', value: data.file_info?.filename || selectedFile.name },
-          { label: 'Mode', value: data.analysis?.mode || 'Remote API' },
+          { label: 'Model', value: data.analysis?.model_type || 'SecureScan X1' },
           { label: 'Filesize', value: `${(selectedFile.size / 1024).toFixed(1)} KB` }
         ],
         heatmap: data.heatmap ? (data.heatmap.startsWith('http') ? data.heatmap : `${baseUrl}${data.heatmap}`) : undefined
@@ -82,7 +88,7 @@ export function DeepfakeAnalyzer() {
       setResult(mappedResult);
     } catch (error: any) {
       console.error('Detailed error analyzing media:', error);
-      alert(`Error: ${error.message || "Failed to contact analysis server"}. \n\nCheck if the backend is awake (it may take 1 minute to start on Render free tier).`);
+      alert(`Error: ${error.message || "Failed to contact analysis server"}. \n\nCheck if the backend is running locally at http://localhost:8000`);
     } finally {
       setAnalyzing(false);
     }

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Eye } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -27,34 +28,62 @@ const recentAlerts = [
 ];
 
 export function Dashboard() {
+  const [stats, setStats] = useState({
+    scans: "---",
+    monitors: "---",
+    threats: "---",
+    authentic: "---"
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/stats');
+        const data = await response.json();
+        setStats({
+          scans: data.scans,
+          monitors: data.monitors,
+          threats: data.threats,
+          authentic: data.authentic
+        });
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Scans"
-          value="1,847"
+          value={stats.scans}
           change="+12.5%"
           trend="up"
           icon={Activity}
         />
         <StatCard
           title="Active Monitors"
-          value="24"
+          value={stats.monitors}
           change="+3"
           trend="up"
           icon={Eye}
         />
         <StatCard
           title="Threats Detected"
-          value="16"
+          value={stats.threats}
           change="-8.3%"
           trend="down"
           icon={AlertTriangle}
         />
         <StatCard
           title="Verified Authentic"
-          value="1,831"
+          value={stats.authentic}
           change="+15.2%"
           trend="up"
           icon={CheckCircle}
@@ -70,12 +99,12 @@ export function Dashboard() {
             <AreaChart data={scanActivity}>
               <defs>
                 <linearGradient id="scanGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="threatGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -149,11 +178,10 @@ export function Dashboard() {
               key={alert.id}
               className="flex items-start gap-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-slate-600 transition-colors"
             >
-              <div className={`mt-1 w-2 h-2 rounded-full ${
-                alert.type === 'critical' ? 'bg-red-500' :
+              <div className={`mt-1 w-2 h-2 rounded-full ${alert.type === 'critical' ? 'bg-red-500' :
                 alert.type === 'warning' ? 'bg-yellow-500' :
-                'bg-blue-500'
-              }`} />
+                  'bg-blue-500'
+                }`} />
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -188,9 +216,8 @@ function StatCard({ title, value, change, trend, icon: Icon }: {
         <Icon className="w-5 h-5 text-slate-500" />
       </div>
       <div className="text-3xl font-semibold text-slate-100 mb-2">{value}</div>
-      <div className={`flex items-center gap-1 text-sm ${
-        trend === 'up' ? 'text-green-400' : 'text-red-400'
-      }`}>
+      <div className={`flex items-center gap-1 text-sm ${trend === 'up' ? 'text-green-400' : 'text-red-400'
+        }`}>
         {trend === 'up' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
         <span>{change}</span>
       </div>
