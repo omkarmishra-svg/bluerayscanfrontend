@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config';
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Activity, Eye } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -39,7 +40,7 @@ export function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/stats');
+        const response = await fetch(API_ENDPOINTS.STATS);
         const data = await response.json();
         setStats({
           scans: data.scans,

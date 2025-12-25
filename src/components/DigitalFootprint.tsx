@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, MapPin, Calendar, Link as LinkIcon, MessageSquare, Image, Code, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
+import { API_ENDPOINTS } from '../config';
 
 type Platform = 'all' | 'social' | 'forums' | 'repos' | 'news' | 'dark-web';
 
@@ -118,7 +119,7 @@ export function DigitalFootprint() {
     if (!searchQuery) return;
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/intelligence/search?email=${encodeURIComponent(searchQuery)}`);
+      const response = await fetch(API_ENDPOINTS.OSINT_SEARCH(searchQuery));
       if (!response.ok) throw new Error('Search request failed');
       const data = await response.json();
       if (data.status === 'success') {

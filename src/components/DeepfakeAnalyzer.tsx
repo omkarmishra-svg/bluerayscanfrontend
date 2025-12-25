@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Upload, Image as ImageIcon, Video, Mic, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { API_ENDPOINTS, API_BASE_URL } from '../config';
 
 type AnalysisType = 'image' | 'video' | 'audio';
 type AnalysisResult = {
@@ -45,9 +46,9 @@ export function DeepfakeAnalyzer() {
       console.log(`Starting ${selectedType} analysis with file:`, selectedFile.name);
 
       // Determine correct endpoint
-      let endpoint = 'http://localhost:8000/api/scan';
-      if (selectedType === 'video') endpoint = 'http://localhost:8000/api/scan/video';
-      if (selectedType === 'audio') endpoint = 'http://localhost:8000/api/scan/audio';
+      let endpoint = API_ENDPOINTS.SCAN;
+      if (selectedType === 'video') endpoint = API_ENDPOINTS.SCAN_VIDEO;
+      if (selectedType === 'audio') endpoint = API_ENDPOINTS.SCAN_AUDIO;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -66,7 +67,6 @@ export function DeepfakeAnalyzer() {
       console.log('Analysis data:', data);
 
       // Map backend response to AnalysisResult
-      const baseUrl = 'http://localhost:8000';
       const mappedResult: AnalysisResult = {
         confidence: data.confidence || 0,
         verdict: data.prediction === 'FAKE' ? 'deepfake' : 'authentic',
@@ -82,13 +82,13 @@ export function DeepfakeAnalyzer() {
           { label: 'Model', value: data.analysis?.model_type || 'SecureScan X1' },
           { label: 'Filesize', value: `${(selectedFile.size / 1024).toFixed(1)} KB` }
         ],
-        heatmap: data.heatmap ? (data.heatmap.startsWith('http') ? data.heatmap : `${baseUrl}${data.heatmap}`) : undefined
+        heatmap: data.heatmap ? (data.heatmap.startsWith('http') ? data.heatmap : `${API_BASE_URL}${data.heatmap}`) : undefined
       };
 
       setResult(mappedResult);
     } catch (error: any) {
       console.error('Detailed error analyzing media:', error);
-      alert(`Error: ${error.message || "Failed to contact analysis server"}. \n\nCheck if the backend is running locally at http://localhost:8000`);
+      alert(`Error: ${error.message || "Failed to contact analysis server"}. \n\nCheck if the backend is running at ${API_BASE_URL}`);
     } finally {
       setAnalyzing(false);
     }
