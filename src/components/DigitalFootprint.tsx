@@ -113,7 +113,12 @@ export function DigitalFootprint() {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('all');
   const [selectedRisk, setSelectedRisk] = useState<string>('all');
   const [loading, setLoading] = useState(false);
-  const [osintData, setOsintData] = useState<any[]>(footprintData); // Fallback to mock if search not performed
+  const [osintData, setOsintData] = useState<any[]>(footprintData);
+  const [linkedAssets, setLinkedAssets] = useState([
+    { type: 'email', value: 'alex@investigator.io', label: 'Primary Email' },
+    { type: 'twitter', value: '@alex_osint', label: 'Work Social' }
+  ]);
+  const [newAsset, setNewAsset] = useState({ type: 'email', value: '' });
 
   const handleSearch = async () => {
     if (!searchQuery) return;
@@ -141,6 +146,13 @@ export function DigitalFootprint() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addAsset = () => {
+    if (!newAsset.value) return;
+    setLinkedAssets([...linkedAssets, { ...newAsset, label: `${newAsset.type === 'email' ? 'Gmail' : 'Social'} Account` }]);
+    setNewAsset({ ...newAsset, value: '' });
+    // In a real demo, we'd call /profile/link here
   };
 
   const filteredData = osintData.filter((item: FootprintItem) => {
@@ -192,12 +204,55 @@ export function DigitalFootprint() {
         </div>
       </div>
 
+      {/* Asset Linking - NEW SECTION */}
+      <div className="bg-slate-900/50 border border-blue-500/30 rounded-xl p-6 shadow-lg shadow-blue-500/5">
+        <h3 className="text-blue-400 mb-4 flex items-center gap-2">
+          <LinkIcon className="w-5 h-5" />
+          Link Social Accounts & Identity Assets
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <select
+                value={newAsset.type}
+                onChange={(e) => setNewAsset({ ...newAsset, type: e.target.value })}
+                className="bg-slate-800 border-slate-700 rounded-lg px-3 text-sm"
+              >
+                <option value="email">Gmail/Email</option>
+                <option value="twitter">Twitter/X</option>
+                <option value="github">GitHub</option>
+                <option value="linkedin">LinkedIn</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Asset identifier (email or @handle)"
+                value={newAsset.value}
+                onChange={(e) => setNewAsset({ ...newAsset, value: e.target.value })}
+                className="flex-1 bg-slate-800 border-slate-700 rounded-lg px-4 py-2 text-sm"
+              />
+              <Button onClick={addAsset} size="sm">Link Asset</Button>
+            </div>
+            <p className="text-xs text-slate-500 italic">
+              Linking assets allows BlueRayScan to proactively monitor your digital risk across different users and platforms.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {linkedAssets.map((asset, idx) => (
+              <div key={idx} className="bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 flex items-center gap-2">
+                <span className="text-xs text-blue-400 font-medium capitalize">{asset.type}:</span>
+                <span className="text-xs text-slate-300">{asset.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Search Email / Username</label>
+            <label className="block text-sm text-slate-400 mb-2">Manual Footprint Trace</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
@@ -209,8 +264,8 @@ export function DigitalFootprint() {
                   className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <Button onClick={handleSearch} disabled={loading}>
-                {loading ? 'Searching...' : 'Scan Footprint'}
+              <Button onClick={handleSearch} disabled={loading} variant="secondary">
+                {loading ? 'Searching...' : 'Deep Scan'}
               </Button>
             </div>
           </div>

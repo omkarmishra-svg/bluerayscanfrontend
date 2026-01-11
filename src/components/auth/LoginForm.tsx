@@ -8,6 +8,7 @@ import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 import { MFAModal } from './MFAModal';
 import { validateEmail, validatePassword } from '../../utils/authValidation';
 import { generateDeviceFingerprint, addTrustedDevice } from '../../utils/deviceFingerprint';
+import { API_ENDPOINTS } from '../../config';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -44,23 +45,36 @@ export function LoginForm({ onLoginSuccess, onSignUpClick, onForgotPasswordClick
     setLoading(true);
 
     // Simulate API call
-    setTimeout(() => {
-      // Demo credentials: demo@osint.com / Demo@123!
-      if (email === 'demo@osint.com' && password === 'Demo@123!') {
-        setLoginStep('mfa');
-        setShowMFA(true);
+    setTimeout(async () => {
+      // Simple Login: Allow any valid format for hackathon ease
+      if (email && password) {
+        try {
+          // 🚀 Strategic Twist: "Login" acts as a portal to link the email as an asset
+          await fetch(API_ENDPOINTS.PROFILE_LINK + `?user_id=demo&asset_type=email&asset_value=${encodeURIComponent(email)}&label=Login%20Credential`, {
+            method: 'POST'
+          });
+        } catch (e) {
+          console.warn("Backend profile link failed (demo mode active)");
+        }
+
+        // Skip MFA for "simple" login as requested, go straight to success
+        setLoginStep('success');
         setLoading(false);
+        // Simulate Success Redirect
+        setTimeout(() => {
+          onLoginSuccess();
+        }, 1500);
       } else {
-        setError('Invalid credentials. Try demo@osint.com / Demo@123!');
+        setError('Please enter both email and password');
         setLoading(false);
       }
-    }, 1500);
+    }, 1000);
   };
 
   const handleMFAVerify = (code: string) => {
     setShowMFA(false);
     setLoginStep('success');
-    
+
     // Save device if remember is checked
     if (rememberDevice) {
       const deviceInfo = generateDeviceFingerprint();
@@ -75,8 +89,29 @@ export function LoginForm({ onLoginSuccess, onSignUpClick, onForgotPasswordClick
 
   const handleSocialLogin = (provider: string) => {
     setLoading(true);
-    setError(`${provider} login is not configured in demo mode`);
-    setTimeout(() => setLoading(false), 1000);
+    setError('');
+
+    // Simulate OAuth Redirect/Popup
+    setTimeout(async () => {
+      const mockSocialEmail = `demo.${provider.toLowerCase()}@social.com`;
+
+      try {
+        // Link the social identity as an asset
+        await fetch(API_ENDPOINTS.PROFILE_LINK + `?user_id=demo&asset_type=${provider.toLowerCase()}&asset_value=${encodeURIComponent(mockSocialEmail)}&label=${provider}%20Identity`, {
+          method: 'POST'
+        });
+      } catch (e) {
+        console.warn(`${provider} link failed in demo mode`);
+      }
+
+      setLoginStep('success');
+      setLoading(false);
+
+      // Redirect to dashboard
+      setTimeout(() => {
+        onLoginSuccess();
+      }, 1500);
+    }, 1200);
   };
 
   return (
@@ -203,17 +238,7 @@ export function LoginForm({ onLoginSuccess, onSignUpClick, onForgotPasswordClick
                 <p className="text-slate-400">Enter your credentials to access the platform</p>
               </div>
 
-              {/* Demo credentials info */}
-              <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm">
-                    <p className="text-blue-400 mb-1">Demo Credentials:</p>
-                    <p className="text-slate-300">Email: <code className="bg-slate-800 px-1 rounded">demo@osint.com</code></p>
-                    <p className="text-slate-300">Password: <code className="bg-slate-800 px-1 rounded">Demo@123!</code></p>
-                  </div>
-                </div>
-              </div>
+              {/* Demo Credentials box removed */}
 
               {/* Error message */}
               {error && (

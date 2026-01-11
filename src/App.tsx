@@ -8,21 +8,29 @@ import { ScanConfiguration } from './components/ScanConfiguration';
 import { Reports } from './components/Reports';
 import { Settings } from './components/Settings';
 import { About } from './components/About';
-import { 
-  LayoutDashboard, 
-  Scan, 
-  Footprints, 
-  Shield, 
+import { SocialMediaMonitor } from './components/SocialMediaMonitor';
+import { SteganographyAnalyzer } from './components/SteganographyAnalyzer';
+import { ReverseOSINT } from './components/ReverseOSINT';
+import { APIKeyConfiguration } from './components/APIKeyConfiguration';
+import {
+  LayoutDashboard,
+  Scan,
+  Footprints,
+  Shield,
   Settings as SettingsIcon,
   FileText,
   Search,
   LogOut,
   User,
-  Info
+  Info,
+  Instagram,
+  Eye,
+  Globe,
+  Key
 } from 'lucide-react';
 import { Button } from './components/ui/button';
 
-type View = 'dashboard' | 'deepfake' | 'footprint' | 'risk' | 'scan' | 'reports' | 'settings' | 'about';
+type View = 'dashboard' | 'deepfake' | 'footprint' | 'risk' | 'scan' | 'reports' | 'settings' | 'about' | 'social' | 'stego' | 'reverse' | 'apikeys';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,10 +52,14 @@ export default function App() {
   const navigation = [
     { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'deepfake' as View, label: 'Deepfake Analysis', icon: Scan },
+    { id: 'social' as View, label: 'Social Media OSINT', icon: Instagram },
+    { id: 'stego' as View, label: 'Steganography', icon: Eye },
+    { id: 'reverse' as View, label: 'Reverse OSINT', icon: Globe },
     { id: 'footprint' as View, label: 'Digital Footprint', icon: Footprints },
     { id: 'risk' as View, label: 'Risk Monitor', icon: Shield },
     { id: 'scan' as View, label: 'Scan Config', icon: Search },
     { id: 'reports' as View, label: 'Reports', icon: FileText },
+    { id: 'apikeys' as View, label: 'API Keys', icon: Key },
     { id: 'settings' as View, label: 'Settings', icon: SettingsIcon },
     { id: 'about' as View, label: 'About', icon: Info },
   ];
@@ -98,11 +110,10 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setCurrentView(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    currentView === item.id
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === item.id
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>
@@ -116,10 +127,14 @@ export default function App() {
         <main className="flex-1 p-6">
           {currentView === 'dashboard' && <Dashboard />}
           {currentView === 'deepfake' && <DeepfakeAnalyzer />}
+          {currentView === 'social' && <SocialMediaMonitor />}
+          {currentView === 'stego' && <SteganographyAnalyzer />}
+          {currentView === 'reverse' && <ReverseOSINT />}
           {currentView === 'footprint' && <DigitalFootprint />}
           {currentView === 'risk' && <RiskMonitor />}
           {currentView === 'scan' && <ScanConfiguration />}
           {currentView === 'reports' && <Reports />}
+          {currentView === 'apikeys' && <APIKeyConfiguration />}
           {currentView === 'settings' && <Settings />}
           {currentView === 'about' && <About />}
         </main>
