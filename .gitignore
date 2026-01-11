@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 # Backend (Exclude if you want a frontend-only repo)
-backend/
+# Backend (Exclude if you want a frontend-only repo)
+# backend/
