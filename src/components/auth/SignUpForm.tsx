@@ -66,7 +66,7 @@ export function SignUpForm({ onSignUpSuccess, onBackToLogin }: SignUpFormProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -226,7 +226,7 @@ export function SignUpForm({ onSignUpSuccess, onBackToLogin }: SignUpFormProps) 
               <Checkbox
                 id="terms"
                 checked={acceptTerms}
-                onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                onCheckedChange={(checked: boolean | 'indeterminate') => setAcceptTerms(checked === true)}
               />
               <Label htmlFor="terms" className="text-sm text-slate-400 cursor-pointer leading-relaxed">
                 I accept the{' '}

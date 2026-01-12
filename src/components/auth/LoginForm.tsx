@@ -297,7 +297,7 @@ export function LoginForm({ onLoginSuccess, onSignUpClick, onForgotPasswordClick
                     <Checkbox
                       id="remember"
                       checked={rememberDevice}
-                      onCheckedChange={(checked) => setRememberDevice(checked as boolean)}
+                      onCheckedChange={(checked: boolean | 'indeterminate') => setRememberDevice(checked === true)}
                     />
                     <Label htmlFor="remember" className="text-sm text-slate-400 cursor-pointer">
                       Remember Device
