@@ -6,6 +6,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from app.services.steganography_detector import stego_detector
 from app.services.storage import storage_service
 from app.services.database import db_service
+from app.services.reverse_osint import reverse_osint
 
 router = APIRouter()
 
@@ -58,9 +59,15 @@ async def analyze_image(file: UploadFile = File(...), user_id: str = "demo", ext
             filename = os.path.basename(result["heatmap_path"])
             result["heatmap_url"] = f"/uploads/{filename}"
         
+        # Reverse OSINT Correlation
+        correlation = None
+        if has_hidden_data:
+            correlation = await reverse_osint.correlate_stego_data(result.get("extracted_data"))
+        
         return {
             **result,
-            "file_info": storage_result
+            "file_info": storage_result,
+            "reverse_osint_correlation": correlation
         }
     
     except Exception as e:

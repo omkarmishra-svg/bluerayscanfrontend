@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, Search, Eye, MapPin, Smartphone, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, Search, Eye, MapPin, Smartphone, Calendar, AlertCircle, CheckCircle, Shield } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
 
 interface StegoResult {
@@ -13,6 +13,16 @@ interface StegoResult {
         extraction_method?: string;
     };
     heatmap_url?: string;
+    reverse_osint_correlation?: {
+        matches_found: boolean;
+        risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+        summary: string;
+        matching_visitors: Array<{
+            ip: string;
+            timestamp: string;
+            threat_level: string;
+        }>;
+    };
 }
 
 export function SteganographyAnalyzer() {
@@ -135,8 +145,8 @@ export function SteganographyAnalyzer() {
                         <div className="space-y-6">
                             {/* Detection Status */}
                             <div className={`p-6 rounded-lg border-2 ${result.has_hidden_data
-                                    ? 'bg-red-500/10 border-red-500/30'
-                                    : 'bg-green-500/10 border-green-500/30'
+                                ? 'bg-red-500/10 border-red-500/30'
+                                : 'bg-green-500/10 border-green-500/30'
                                 }`}>
                                 <div className="flex items-center gap-3 mb-3">
                                     {result.has_hidden_data ? (
@@ -199,6 +209,42 @@ export function SteganographyAnalyzer() {
                                 </div>
                             )}
 
+                            {/* Reverse OSINT Correlation */}
+                            {result.reverse_osint_correlation && result.reverse_osint_correlation.matches_found && (
+                                <div className={`p-4 rounded-lg border ${result.reverse_osint_correlation.risk_level === 'CRITICAL' || result.reverse_osint_correlation.risk_level === 'HIGH'
+                                        ? 'bg-red-500/20 border-red-500/40'
+                                        : 'bg-yellow-500/20 border-yellow-500/40'
+                                    }`}>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Shield className="w-5 h-5 text-red-400" />
+                                        <h4 className="text-sm font-bold text-slate-100 italic">REVERSE OSINT CORRELATION</h4>
+                                    </div>
+                                    <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                                        {result.reverse_osint_correlation.summary}
+                                    </p>
+
+                                    {result.reverse_osint_correlation.matching_visitors.length > 0 && (
+                                        <div className="space-y-2">
+                                            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Matching Visitor Profiles:</div>
+                                            {result.reverse_osint_correlation.matching_visitors.map((visitor, idx) => (
+                                                <div key={idx} className="flex items-center justify-between text-xs p-2 bg-black/30 rounded border border-white/5">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-blue-400 font-mono">{visitor.ip}</span>
+                                                        <span className="text-[10px] text-slate-500">{new Date(visitor.timestamp).toLocaleString()}</span>
+                                                    </div>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${visitor.threat_level === 'CRITICAL' ? 'bg-red-900/40 text-red-300' :
+                                                            visitor.threat_level === 'HIGH' ? 'bg-red-500/30 text-red-400' :
+                                                                'bg-slate-700 text-slate-300'
+                                                        }`}>
+                                                        {visitor.threat_level}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Detection Method Results */}
                             {result.detection_methods && (
                                 <div>
@@ -211,8 +257,8 @@ export function SteganographyAnalyzer() {
                                                     <div className="flex items-center justify-between mb-2">
                                                         <span className="text-sm text-slate-300">{data.method}</span>
                                                         <span className={`text-xs px-2 py-1 rounded ${data.suspicious
-                                                                ? 'bg-red-500/20 text-red-400'
-                                                                : 'bg-green-500/20 text-green-400'
+                                                            ? 'bg-red-500/20 text-red-400'
+                                                            : 'bg-green-500/20 text-green-400'
                                                             }`}>
                                                             {data.suspicious ? 'Suspicious' : 'Clean'}
                                                         </span>

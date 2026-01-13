@@ -5,12 +5,13 @@ export interface ValidationResult {
 
 export function validateEmail(email: string): ValidationResult {
   if (!email) {
-    return { isValid: false, error: 'Email is required' };
+    return { isValid: false, error: 'Email or Username is required' };
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return { isValid: false, error: 'Invalid email format' };
+  // Allow normal email OR a simple username (alphanumeric, 3+ chars)
+  if (!emailRegex.test(email) && !/^[a-zA-Z0-9_-]{3,}$/.test(email)) {
+    return { isValid: false, error: 'Invalid email or username format' };
   }
 
   return { isValid: true };

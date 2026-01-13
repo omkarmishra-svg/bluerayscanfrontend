@@ -331,6 +331,53 @@ class ReverseOSINTService:
             "warning": "Anyone accessing this data will be logged and flagged as potential threat"
         }
 
+    async def correlate_stego_data(self, extracted_data: Dict) -> Dict:
+        """
+        Correlate extracted steganography data with visitor logs.
+        """
+        correlation = {
+            "matches_found": False,
+            "matching_visitors": [],
+            "risk_level": "LOW",
+            "summary": "No direct correlation with visitor logs found."
+        }
+        
+        if not extracted_data:
+            return correlation
+            
+        coords = extracted_data.get("coordinates")
+        text = extracted_data.get("text")
+        
+        # Search visitor logs for geolocation correlation
+        if coords:
+            # Extract city/country from coordinate string if possible (mocked parser)
+            # In a real app, you'd use a reverse geocoder
+            city_hint = None
+            if "New York" in coords: city_hint = "New York"
+            elif "London" in coords: city_hint = "London"
+            elif "Tokyo" in coords: city_hint = "Tokyo"
+            elif "Delhi" in coords: city_hint = "Delhi"
+            
+            if city_hint:
+                logs = db_service.get_visitor_logs(limit=100)
+                matching = [l for l in logs if l.city == city_hint]
+                if matching:
+                    correlation["matches_found"] = True
+                    correlation["matching_visitors"] = [
+                        {"ip": l.ip_address, "timestamp": l.timestamp.isoformat(), "threat_level": l.threat_level}
+                        for l in matching[:5]
+                    ]
+                    correlation["risk_level"] = "HIGH"
+                    correlation["summary"] = f"Extraction correlation detected: {len(matching)} visitors from {city_hint} identified in monitoring logs."
+
+        # Search for keyword correlation in text
+        if text and "Operation" in text:
+            correlation["matches_found"] = True
+            correlation["risk_level"] = "CRITICAL"
+            correlation["summary"] = "Extracted text contains operational keywords matching known threat actor patterns."
+
+        return correlation
+
 
 # Global instance
 reverse_osint = ReverseOSINTService()
